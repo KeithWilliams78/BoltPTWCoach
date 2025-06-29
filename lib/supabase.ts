@@ -1,182 +1,118 @@
 import { createClient } from '@supabase/supabase-js';
 
-// TODO: Add these environment variables to your .env.local file
+// Client-side Supabase client (uses anon key)
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Types for database tables
-export interface StrategyCascadeRecord {
-  id: string;
-  user_id: string;
-  winning_aspiration: string;
-  where_to_play: string;
-  how_to_win: string;
-  core_capabilities: string;
-  management_systems: string;
-  created_at: string;
-  updated_at: string;
-}
+// Server-side Supabase client (uses service role key)
+export const createServerSupabaseClient = () => {
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  return createClient(supabaseUrl, supabaseServiceKey);
+};
 
-export interface CoachResponseRecord {
-  id: string;
-  cascade_id: string;
-  step_name: string;
-  feedback: string;
-  questions: string[];
-  suggestions: string[];
-  created_at: string;
-}
-
-// Database functions
+// Database helper functions
 export class SupabaseService {
-  // Save strategy cascade (with upsert for autosave)
-  static async saveCascade(userId: string, cascade: any): Promise<StrategyCascadeRecord | null> {
-    try {
-      const { data, error } = await supabase
-        .from('strategy_cascades')
-        .upsert({
-          user_id: userId,
-          winning_aspiration: cascade.winningAspiration,
-          where_to_play: cascade.whereToPlay,
-          how_to_win: cascade.howToWin,
-          core_capabilities: cascade.coreCapabilities,
-          management_systems: cascade.managementSystems,
-          updated_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
+  // Create new cascade
+  static async createCascade(userId: string, name?: string): Promise<any> {
+    const defaultName = name || `Draft - ${new Date().toLocaleString()}`;
+    
+    const { data, error } = await supabase
+      .from('cascades')
+      .insert({
+        user_id: userId,
+        name: defaultName,
+        cascade_json: {
+          winningAspiration: '',
+          whereToPlay: '',
+          howToWin: '',
+          coreCapabilities: '',
+          managementSystems: '',
+        },
+      })
+      .select()
+      .single();
 
-      if (error) {
-        console.error('Error saving cascade:', error);
-        return null;
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Unexpected error saving cascade:', error);
-      return null;
-    }
+    if (error) throw error;
+    return data;
   }
 
-  // Load strategy cascade
-  static async loadCascade(userId: string): Promise<StrategyCascadeRecord | null> {
-    try {
-      const { data, error } = await supabase
-        .from('strategy_cascades')
-        .select('*')
-        .eq('user_id', userId)
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .single();
+  // Get user's cascades
+  static async getUserCascades(userId: string): Promise<any[]> {
+    const { data, error } = await supabase
+      .from('cascades')
+      .select('*')
+      .eq('user_id', userId)
+      .order('updated_at', { ascending: false });
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
-        console.error('Error loading cascade:', error);
-        return null;
-      }
-
-      return data || null;
-    } catch (error) {
-      console.error('Unexpected error loading cascade:', error);
-      return null;
-    }
+    if (error) throw error;
+    return data || [];
   }
 
-  // Save coach response
-  static async saveCoachResponse(
-    cascadeId: string, 
-    response: any
-  ): Promise<CoachResponseRecord | null> {
-    try {
-      const { data, error } = await supabase
-        .from('coach_responses')
-        .insert({
-          cascade_id: cascadeId,
-          step_name: response.stepName,
-          feedback: response.feedback,
-          questions: response.questions,
-          suggestions: response.suggestions,
-        })
-        .select()
-        .single();
+  // Get single cascade
+  static async getCascade(cascadeId: string, userId: string): Promise<any> {
+    const { data, error } = await supabase
+      .from('cascades')
+      .select('*')
+      .eq('id', cascadeId)
+      .eq('user_id', userId)
+      .single();
 
-      if (error) {
-        console.error('Error saving coach response:', error);
-        return null;
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Unexpected error saving coach response:', error);
-      return null;
-    }
+    if (error) throw error;
+    return data;
   }
 
-  // Load coach responses for a cascade
-  static async loadCoachResponses(cascadeId: string): Promise<CoachResponseRecord[]> {
-    try {
-      const { data, error } = await supabase
-        .from('coach_responses')
-        .select('*')
-        .eq('cascade_id', cascadeId)
-        .order('created_at', { ascending: false });
+  // Update cascade
+  static async updateCascade(cascadeId: string, userId: string, updates: any): Promise<any> {
+    const { data, error } = await supabase
+      .from('cascades')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', cascadeId)
+      .eq('user_id', userId)
+      .select()
+      .single();
 
-      if (error) {
-        console.error('Error loading coach responses:', error);
-        return [];
-      }
+    if (error) throw error;
+    return data;
+  }
 
-      return data || [];
-    } catch (error) {
-      console.error('Unexpected error loading coach responses:', error);
-      return [];
-    }
+  // Delete cascade
+  static async deleteCascade(cascadeId: string, userId: string): Promise<void> {
+    const { error } = await supabase
+      .from('cascades')
+      .delete()
+      .eq('id', cascadeId)
+      .eq('user_id', userId);
+
+    if (error) throw error;
   }
 }
 
 /*
-TODO: Create these tables in Supabase:
+TODO: Create this table in Supabase:
 
--- Strategy Cascades table
-CREATE TABLE strategy_cascades (
+-- Cascades table
+CREATE TABLE cascades (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id TEXT NOT NULL,
-  winning_aspiration TEXT DEFAULT '',
-  where_to_play TEXT DEFAULT '',
-  how_to_win TEXT DEFAULT '',
-  core_capabilities TEXT DEFAULT '',
-  management_systems TEXT DEFAULT '',
+  name TEXT NOT NULL,
+  cascade_json JSONB NOT NULL DEFAULT '{}',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Coach Responses table  
-CREATE TABLE coach_responses (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  cascade_id UUID REFERENCES strategy_cascades(id) ON DELETE CASCADE,
-  step_name TEXT NOT NULL,
-  feedback TEXT NOT NULL,
-  questions TEXT[] DEFAULT '{}',
-  suggestions TEXT[] DEFAULT '{}',
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
 -- Enable RLS
-ALTER TABLE strategy_cascades ENABLE ROW LEVEL SECURITY;
-ALTER TABLE coach_responses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cascades ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies (adjust based on your auth setup)
-CREATE POLICY "Users can manage their own cascades" ON strategy_cascades
-  FOR ALL USING (auth.uid()::text = user_id);
+-- RLS Policy for user access
+CREATE POLICY "Users can manage their own cascades" ON cascades
+  FOR ALL USING (auth.jwt() ->> 'sub' = user_id);
 
-CREATE POLICY "Users can view coach responses for their cascades" ON coach_responses
-  FOR SELECT USING (
-    CASCADE_id IN (
-      SELECT id FROM strategy_cascades WHERE user_id = auth.uid()::text
-    )
-  );
-
-CREATE POLICY "System can insert coach responses" ON coach_responses
-  FOR INSERT WITH CHECK (true);
+-- Index for performance
+CREATE INDEX idx_cascades_user_id ON cascades(user_id);
+CREATE INDEX idx_cascades_updated_at ON cascades(updated_at DESC);
 */

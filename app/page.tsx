@@ -15,8 +15,11 @@ export default function LandingPage() {
               <span className="text-xl font-bold text-gray-900">AI Strategy Coach</span>
             </div>
             <div className="flex items-center space-x-4">
-              <Link href="/app">
-                <Button variant="outline">Get Started</Button>
+              <Link href="/dashboard">
+                <Button variant="outline">Dashboard</Button>
+              </Link>
+              <Link href="/sign-in">
+                <Button>Sign In</Button>
               </Link>
             </div>
           </div>
@@ -40,7 +43,7 @@ export default function LandingPage() {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-            <Link href="/app">
+            <Link href="/dashboard">
               <Button size="lg" className="text-lg px-8 py-3 h-auto">
                 Start Your Strategy
                 <ArrowRight className="ml-2 h-5 w-5" />
@@ -95,11 +98,11 @@ export default function LandingPage() {
                 <div className="mx-auto w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mb-4">
                   <BookOpen className="h-6 w-6 text-purple-600" />
                 </div>
-                <CardTitle className="text-xl">Export & Share</CardTitle>
+                <CardTitle className="text-xl">Save & Export</CardTitle>
               </CardHeader>
               <CardContent>
                 <CardDescription className="text-center text-base">
-                  Generate professional PDF reports of your strategy cascade 
+                  Save your progress and generate professional PDF reports of your strategy cascade 
                   with AI coach insights for team alignment.
                 </CardDescription>
               </CardContent>
@@ -127,7 +130,7 @@ export default function LandingPage() {
                 with AI-powered coaching, you can apply these same principles to your business.
               </p>
               <div className="text-center mt-8">
-                <Link href="/app">
+                <Link href="/dashboard">
                   <Button size="lg" className="text-lg px-8 py-3 h-auto">
                     Start Building Your Strategy
                     <ArrowRight className="ml-2 h-5 w-5" />

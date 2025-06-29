@@ -10,13 +10,24 @@ interface ExportButtonProps {
   cascade: StrategyCascade;
   coachComments?: CoachComment[];
   disabled?: boolean;
+  cascadeName?: string;
 }
 
-export function ExportButton({ cascade, coachComments = [], disabled = false }: ExportButtonProps) {
+export function ExportButton({ cascade, coachComments = [], disabled = false, cascadeName }: ExportButtonProps) {
   const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
 
   const handleExport = async () => {
+    // Check if cascade name starts with "Draft" - prevent export
+    if (cascadeName && cascadeName.match(/^Draft/i)) {
+      toast({
+        title: "Rename Required",
+        description: "Please rename your strategy before exporting.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsExporting(true);
 
     try {

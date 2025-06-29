@@ -1,20 +1,12 @@
-// TODO: Implement Clerk middleware for protecting /app routes
-// 
-// Example implementation:
-// import { authMiddleware } from "@clerk/nextjs";
-// 
-// export default authMiddleware({
-//   publicRoutes: ["/", "/about", "/privacy", "/terms"]
-// });
-// 
-// export const config = {
-//   matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
-// };
+import { authMiddleware } from "@clerk/nextjs";
 
-// For now, allow all routes (no authentication)
-export function middleware() {
-  // No-op until Clerk is properly configured
-}
+export default authMiddleware({
+  // Public routes that don't require authentication
+  publicRoutes: ["/", "/sign-in", "/sign-up"],
+  
+  // Routes that require authentication
+  ignoredRoutes: [],
+});
 
 export const config = {
   matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
