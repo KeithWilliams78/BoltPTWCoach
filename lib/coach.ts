@@ -128,6 +128,35 @@ export class CoachService {
     };
   }
 
+  // Core Capabilities specific feedback with comprehensive cross-step analysis
+  private static generateCapabilitiesFeedback(input: string, cascade: StrategyCascade): CoachResponse {
+    const feedback = this.analyzeCoreCapabilities(input, cascade);
+    
+    const challengingQuestions = [
+      "Do these capabilities directly enable your 'How to Win' strategy, or are they just nice to have?",
+      "Which of these capabilities would be hardest for competitors to replicate or acquire?",
+      "What's your plan for building capabilities you don't currently have?",
+      "How do these capabilities work together to create competitive advantage?",
+      "Are you trying to be excellent at too many things instead of focusing on what matters most?"
+    ];
+
+    const suggestions = [
+      "Focus on capabilities that directly enable your competitive advantage",
+      "Identify which capabilities to build vs. buy vs. partner for",
+      "Consider how capabilities reinforce each other",
+      "Prioritize capabilities that are hard to imitate",
+      "Plan for capability development timelines and investment"
+    ];
+
+    return {
+      stepName: "Core Capabilities",
+      feedback,
+      questions: this.selectRandomItems(challengingQuestions, 3),
+      suggestions: this.selectRandomItems(suggestions, 3),
+      timestamp: new Date()
+    };
+  }
+
   // Analyze winning aspiration content
   private static analyzeWinningAspiration(input: string): string {
     const length = input.length;
@@ -271,17 +300,68 @@ export class CoachService {
     return feedback;
   }
 
-  // TODO: Implement remaining step feedback generators
-  private static generateCapabilitiesFeedback(input: string, cascade: StrategyCascade): CoachResponse {
-    return {
-      stepName: "Core Capabilities",
-      feedback: "This step will identify the key capabilities needed to execute your strategy.",
-      questions: ["What capabilities are critical?", "What do you need to build?"],
-      suggestions: ["Map required skills", "Identify capability gaps"],
-      timestamp: new Date()
-    };
+  // Analyze core capabilities with comprehensive cross-step validation
+  private static analyzeCoreCapabilities(input: string, cascade: StrategyCascade): string {
+    const length = input.length;
+    const hasSpecificCapabilities = /(technology|data|process|system|platform)/i.test(input);
+    const hasGenericCapabilities = /(management|leadership|teamwork|communication)/i.test(input);
+    const hasCapabilityGaps = /(build|develop|acquire|partner|need)/i.test(input);
+    const hasIntegration = /(together|combine|integrate|synergy)/i.test(input);
+    
+    let feedback = "I've analyzed your core capabilities";
+
+    // Cross-step analysis with How to Win
+    if (cascade.howToWin) {
+      const howToWinWords = cascade.howToWin.toLowerCase().split(/\s+/);
+      const inputWords = input.toLowerCase().split(/\s+/);
+      const commonWords = howToWinWords.filter(word => 
+        inputWords.includes(word) && word.length > 3
+      );
+      
+      if (commonWords.length > 0) {
+        feedback += " and can see clear connection to your competitive advantage strategy. ";
+      } else {
+        feedback += ". Consider how these capabilities directly enable your 'How to Win' strategy. ";
+      }
+    }
+
+    // Cross-step analysis with Where to Play
+    if (cascade.whereToPlay) {
+      const whereWords = cascade.whereToPlay.toLowerCase().split(/\s+/);
+      const inputWords = input.toLowerCase().split(/\s+/);
+      const commonWords = whereWords.filter(word => 
+        inputWords.includes(word) && word.length > 3
+      );
+      
+      if (commonWords.length > 0) {
+        feedback += "These capabilities align well with your chosen markets. ";
+      } else {
+        feedback += "Think about how these capabilities help you serve your target markets effectively. ";
+      }
+    }
+
+    if (hasGenericCapabilities && !hasSpecificCapabilities) {
+      feedback += "Focus on distinctive capabilities that create competitive advantage, not generic business skills. ";
+    }
+
+    if (!hasCapabilityGaps) {
+      feedback += "Consider which capabilities you need to build, buy, or partner for - few organizations have everything they need. ";
+    }
+
+    if (!hasIntegration && length > 100) {
+      feedback += "Think about how your capabilities work together to create competitive advantage. ";
+    }
+
+    if (length < 100) {
+      feedback += "Expand on your capability requirements to provide clearer strategic direction. ";
+    }
+
+    feedback += "Remember, core capabilities should be distinctive, hard to replicate, and directly enable your competitive advantage in your chosen markets.";
+
+    return feedback;
   }
 
+  // TODO: Implement Management Systems feedback generator
   private static generateSystemsFeedback(input: string, cascade: StrategyCascade): CoachResponse {
     return {
       stepName: "Management Systems",
@@ -316,7 +396,7 @@ When implementing the real AI coach:
 2. Integrate with OpenAI, Anthropic, or similar AI service
 3. Add sophisticated prompt engineering for each strategy step
 4. Include step parameter in API calls for contextual coaching
-5. Implement comprehensive cross-step analysis (alignment between all three steps)
+5. Implement comprehensive cross-step analysis (alignment across all four steps)
 6. Add conversation history for context
 7. Store responses in Supabase for continuity
 

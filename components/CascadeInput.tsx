@@ -73,6 +73,22 @@ const HELP_CONTENT: Record<string, any> = {
       "Win by offering the industry's most comprehensive sustainability solution with bio-based materials, lifecycle tracking, and regulatory compliance support",
       "Win through superior AI accuracy (95% vs. 70% industry average) with seamless integration and self-learning capabilities"
     ]
+  },
+  "/content/help/core-capabilities.md": {
+    title: "Building Strategic Capabilities",
+    description: "Your core capabilities are the distinctive skills, knowledge, processes, and assets that enable you to execute your strategy and achieve competitive advantage.",
+    guidelines: [
+      "Focus on capabilities that enable your competitive advantage - What must you excel at to win?",
+      "Identify both current strengths and gaps - What do you have vs. what do you need?",
+      "Think beyond just skills - Include processes, technologies, relationships, and assets",
+      "Consider capability integration - How do different capabilities work together?",
+      "Plan for capability development - What will you build, buy, or partner for?"
+    ],
+    examples: [
+      "Excel at real-time data integration, machine learning model development, risk assessment, regulatory compliance, digital UX design, and partnership development",
+      "Excel at bio-based material science, sustainable supply chain management, lifecycle assessment, regulatory compliance, customer co-innovation, and manufacturing optimization",
+      "Excel at natural language processing, enterprise integration, customer success services, data security, scalable infrastructure, and continuous innovation"
+    ]
   }
 };
 
@@ -147,6 +163,13 @@ export function CascadeInput({
       }
     }
 
+    if (stepKey === 'coreCapabilities') {
+      const hasGenericCapabilities = /management|leadership|teamwork|communication/i.test(input);
+      if (hasGenericCapabilities && input.length < 100) {
+        errors.push("Focus on distinctive capabilities that enable your competitive advantage, not generic business skills.");
+      }
+    }
+
     return errors;
   }, [minChars, stepKey]);
 
@@ -182,6 +205,8 @@ export function CascadeInput({
         return "Define where you will compete. Which customer segments, markets, geographies, and product categories will you focus on? Be specific about your boundaries...";
       case 'howToWin':
         return "Explain how you will win in your chosen markets. What unique competitive advantages will enable you to succeed? What makes you different and better than alternatives...";
+      case 'coreCapabilities':
+        return "Identify the core capabilities you need to execute your strategy. What distinctive skills, processes, technologies, and assets must you excel at to win in your chosen markets...";
       default:
         return "Provide detailed information for this strategic choice...";
     }

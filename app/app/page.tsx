@@ -63,7 +63,7 @@ const STEPS = [
     description: "What capabilities must be in place? Identify key strengths to build.",
     key: "coreCapabilities" as keyof StrategyCascade,
     label: "Core Capabilities",
-    helperPath: "/content/help/core-capabilities.md", // TODO: Create this file
+    helperPath: "/content/help/core-capabilities.md",
     minChars: 40,
   },
   {
@@ -153,7 +153,7 @@ export default function StrategyWizard() {
   // Auto-save functionality (TODO: Implement with Supabase)
   useEffect(() => {
     const saveTimer = setTimeout(() => {
-      // TODO: Implement autosave to Supabase
+      // TODO: Implement autosave to Supabase for all four populated boxes
       console.log("Auto-saving cascade:", cascade);
     }, 3000);
 
@@ -241,8 +241,8 @@ export default function StrategyWizard() {
                   </p>
                 </CardHeader>
                 <CardContent className="p-8">
-                  {/* Steps 1, 2, and 3 - Implemented */}
-                  {(currentStep >= 1 && currentStep <= 3) && (
+                  {/* Steps 1-4 - Implemented */}
+                  {(currentStep >= 1 && currentStep <= 4) && (
                     <CascadeInput
                       stepKey={currentStepData.key}
                       label={currentStepData.label}
@@ -257,25 +257,26 @@ export default function StrategyWizard() {
                     />
                   )}
                   
-                  {/* Steps 4-5 - TODO: Implement */}
-                  {currentStep > 3 && (
+                  {/* Step 5 - TODO: Implement Management Systems */}
+                  {currentStep === 5 && (
                     <div className="text-center py-16">
                       <h3 className="text-xl font-semibold text-gray-600 mb-4">
-                        Step {currentStep}: {currentStepData.title}
+                        Step 5: Management Systems
                       </h3>
                       <p className="text-gray-500 mb-8">
-                        This step will be implemented in the next phase.
+                        This final step will be implemented in the next phase.
                       </p>
                       <div className="bg-gray-50 rounded-lg p-6">
                         <p className="text-sm text-gray-600">
-                          TODO: Implement {currentStepData.title} input form with:
+                          TODO: Implement Management Systems input form with:
                         </p>
                         <ul className="text-sm text-gray-600 mt-2 space-y-1">
-                          <li>• Contextual help content from {currentStepData.helperPath}</li>
-                          <li>• Input validation (min {currentStepData.minChars} characters)</li>
-                          <li>• AI coach integration with step context</li>
-                          <li>• Cross-step analysis with previous choices</li>
-                          <li>• Autosave functionality</li>
+                          <li>• Contextual help content from /content/help/management-systems.md</li>
+                          <li>• Input validation (min 40 characters)</li>
+                          <li>• AI coach integration with comprehensive 5-step analysis</li>
+                          <li>• Cross-step validation across all strategic choices</li>
+                          <li>• Final strategy coherence assessment</li>
+                          <li>• PDF export functionality</li>
                         </ul>
                       </div>
                     </div>
