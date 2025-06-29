@@ -70,6 +70,35 @@ export class CoachService {
     };
   }
 
+  // Where to Play specific feedback with cross-step analysis
+  private static generateWhereToPlayFeedback(input: string, aspiration: string): CoachResponse {
+    const feedback = this.analyzeWhereToPlay(input, aspiration);
+    
+    const challengingQuestions = [
+      "Are these market choices specific enough to guide resource allocation decisions?",
+      "How do these segments align with your winning aspiration?",
+      "What makes you believe you can win in these specific markets?",
+      "Are you being too broad or too narrow in your market definition?",
+      "Which of these choices will be hardest for competitors to replicate?"
+    ];
+
+    const suggestions = [
+      "Define customer segments more precisely",
+      "Consider geographic or channel boundaries",
+      "Evaluate market size vs. competitive intensity",
+      "Ensure alignment with your winning aspiration",
+      "Think about adjacency opportunities"
+    ];
+
+    return {
+      stepName: "Where to Play",
+      feedback,
+      questions: this.selectRandomItems(challengingQuestions, 3),
+      suggestions: this.selectRandomItems(suggestions, 3),
+      timestamp: new Date()
+    };
+  }
+
   // Analyze winning aspiration content
   private static analyzeWinningAspiration(input: string): string {
     const length = input.length;
@@ -100,17 +129,59 @@ export class CoachService {
     return feedback;
   }
 
-  // TODO: Implement other step feedback generators
-  private static generateWhereToPlayFeedback(input: string, aspiration: string): CoachResponse {
-    return {
-      stepName: "Where to Play",
-      feedback: "This step will focus on defining your market boundaries and customer segments.",
-      questions: ["Where will you compete?", "Who are your target customers?"],
-      suggestions: ["Define market segments", "Consider geographic boundaries"],
-      timestamp: new Date()
-    };
+  // Analyze where to play with cross-step validation
+  private static analyzeWhereToPlay(input: string, aspiration: string): string {
+    const length = input.length;
+    const hasSegments = /(segment|customer|target)/i.test(input);
+    const hasGeography = /(market|region|country|global|local)/i.test(input);
+    const hasBoundaries = /(focus|specific|exclude|not)/i.test(input);
+    const isTooGeneral = /(everyone|all|any|general)/i.test(input);
+    
+    let feedback = "I've analyzed your 'Where to Play' choices";
+    
+    // Cross-step analysis
+    if (aspiration) {
+      const aspirationWords = aspiration.toLowerCase().split(/\s+/);
+      const inputWords = input.toLowerCase().split(/\s+/);
+      const commonWords = aspirationWords.filter(word => 
+        inputWords.includes(word) && word.length > 3
+      );
+      
+      if (commonWords.length > 0) {
+        feedback += " and I can see good alignment with your winning aspiration. ";
+      } else {
+        feedback += ". Consider how these market choices directly support your winning aspiration. ";
+      }
+    } else {
+      feedback += ". ";
+    }
+
+    if (isTooGeneral) {
+      feedback += "Be more specific about your target segments - 'everyone' is rarely a winning strategy. ";
+    }
+
+    if (!hasSegments) {
+      feedback += "Define your customer segments more clearly - who exactly are you serving? ";
+    }
+
+    if (!hasGeography) {
+      feedback += "Consider adding geographic boundaries to focus your efforts. ";
+    }
+
+    if (!hasBoundaries) {
+      feedback += "Strong 'Where to Play' choices include what you won't do - consider your boundaries. ";
+    }
+
+    if (length < 80) {
+      feedback += "Expand on your market choices to provide clearer strategic direction. ";
+    }
+
+    feedback += "Remember, effective 'Where to Play' choices should be specific enough to guide resource allocation and narrow enough to build competitive advantage.";
+
+    return feedback;
   }
 
+  // TODO: Implement other step feedback generators
   private static generateHowToWinFeedback(input: string, aspiration: string, whereToPlay: string): CoachResponse {
     return {
       stepName: "How to Win",
@@ -164,16 +235,17 @@ When implementing the real AI coach:
 1. Create API endpoint (e.g., /api/coach/feedback)
 2. Integrate with OpenAI, Anthropic, or similar AI service
 3. Add sophisticated prompt engineering for each strategy step
-4. Implement conversation history for context
-5. Add rate limiting and error handling
-6. Store responses in Supabase for continuity
+4. Include step parameter in API calls for contextual coaching
+5. Implement cross-step analysis (e.g., alignment between aspiration and where to play)
+6. Add conversation history for context
+7. Store responses in Supabase for continuity
 
 Example API implementation:
 
 export async function POST(request: Request) {
-  const { stepKey, cascade, conversationHistory } = await request.json();
+  const { stepKey, cascade, step } = await request.json();
   
-  const prompt = buildPrompt(stepKey, cascade, conversationHistory);
+  const prompt = buildPrompt(stepKey, cascade, step);
   
   const response = await openai.chat.completions.create({
     model: "gpt-4",

@@ -9,6 +9,7 @@ import { ArrowLeft, ArrowRight, Target } from "lucide-react";
 import Link from "next/link";
 import { CascadeInput } from "@/components/CascadeInput";
 import { CoachSidebar } from "@/components/CoachSidebar";
+import { useToast } from "@/hooks/use-toast";
 
 // Strategy Cascade structure
 export interface StrategyCascade {
@@ -34,30 +35,45 @@ const STEPS = [
     title: "Winning Aspiration",
     description: "What is your winning aspiration? Define your purpose and strategic intent.",
     key: "winningAspiration" as keyof StrategyCascade,
+    label: "Your Winning Aspiration",
+    helperPath: "/content/help/winning-aspiration.md",
+    minChars: 50,
   },
   {
     id: 2,
     title: "Where to Play",
     description: "Where will you play? Choose your market focus and boundaries.",
     key: "whereToPlay" as keyof StrategyCascade,
+    label: "Where to Play",
+    helperPath: "/content/help/where-to-play.md",
+    minChars: 40,
   },
   {
     id: 3,
     title: "How to Win",
     description: "How will you win? Define your competitive advantage.",
     key: "howToWin" as keyof StrategyCascade,
+    label: "How to Win",
+    helperPath: "/content/help/how-to-win.md", // TODO: Create this file
+    minChars: 40,
   },
   {
     id: 4,
     title: "Core Capabilities",
     description: "What capabilities must be in place? Identify key strengths to build.",
     key: "coreCapabilities" as keyof StrategyCascade,
+    label: "Core Capabilities",
+    helperPath: "/content/help/core-capabilities.md", // TODO: Create this file
+    minChars: 40,
   },
   {
     id: 5,
     title: "Management Systems",
     description: "What management systems are required? Design supporting infrastructure.",
     key: "managementSystems" as keyof StrategyCascade,
+    label: "Management Systems",
+    helperPath: "/content/help/management-systems.md", // TODO: Create this file
+    minChars: 40,
   },
 ];
 
@@ -72,6 +88,7 @@ export default function StrategyWizard() {
   });
   const [coachResponses, setCoachResponses] = useState<CoachResponse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   // Calculate progress percentage
   const progress = (currentStep / STEPS.length) * 100;
@@ -79,6 +96,27 @@ export default function StrategyWizard() {
 
   // Handle step navigation
   const goToNextStep = () => {
+    const currentValue = cascade[currentStepData.key];
+    
+    // Validate current step before advancing
+    if (!currentValue.trim()) {
+      toast({
+        title: "Input Required",
+        description: `Please complete the ${currentStepData.title} step before continuing.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (currentValue.trim().length < currentStepData.minChars) {
+      toast({
+        title: "More Detail Needed",
+        description: `Please provide at least ${currentStepData.minChars} characters for ${currentStepData.title}.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (currentStep < STEPS.length) {
       setCurrentStep(currentStep + 1);
     }
@@ -103,6 +141,15 @@ export default function StrategyWizard() {
     setCoachResponses(prev => [response, ...prev]);
   };
 
+  // Handle coach API errors
+  const handleCoachError = (error: string) => {
+    toast({
+      title: "Coach Unavailable",
+      description: "Unable to get coach feedback right now. Your input has been saved.",
+      variant: "destructive",
+    });
+  };
+
   // Auto-save functionality (TODO: Implement with Supabase)
   useEffect(() => {
     const saveTimer = setTimeout(() => {
@@ -112,6 +159,12 @@ export default function StrategyWizard() {
 
     return () => clearTimeout(saveTimer);
   }, [cascade]);
+
+  // TODO: Load saved cascade on component mount
+  useEffect(() => {
+    // TODO: Load from Supabase if user is authenticated
+    console.log("TODO: Load saved cascade from Supabase");
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
@@ -188,18 +241,24 @@ export default function StrategyWizard() {
                   </p>
                 </CardHeader>
                 <CardContent className="p-8">
-                  {currentStep === 1 && (
+                  {/* Steps 1 and 2 - Implemented */}
+                  {(currentStep === 1 || currentStep === 2) && (
                     <CascadeInput
                       stepKey={currentStepData.key}
+                      label={currentStepData.label}
+                      helperPath={currentStepData.helperPath}
+                      minChars={currentStepData.minChars}
                       value={cascade[currentStepData.key]}
                       onChange={(value) => updateCascade(currentStepData.key, value)}
                       onCoachResponse={handleCoachResponse}
+                      onCoachError={handleCoachError}
                       setIsLoading={setIsLoading}
                       cascade={cascade}
                     />
                   )}
                   
-                  {currentStep > 1 && (
+                  {/* Steps 3-5 - TODO: Implement */}
+                  {currentStep > 2 && (
                     <div className="text-center py-16">
                       <h3 className="text-xl font-semibold text-gray-600 mb-4">
                         Step {currentStep}: {currentStepData.title}
@@ -212,9 +271,9 @@ export default function StrategyWizard() {
                           TODO: Implement {currentStepData.title} input form with:
                         </p>
                         <ul className="text-sm text-gray-600 mt-2 space-y-1">
-                          <li>• Contextual help content</li>
-                          <li>• Input validation</li>
-                          <li>• AI coach integration</li>
+                          <li>• Contextual help content from {currentStepData.helperPath}</li>
+                          <li>• Input validation (min {currentStepData.minChars} characters)</li>
+                          <li>• AI coach integration with step context</li>
                           <li>• Autosave functionality</li>
                         </ul>
                       </div>
@@ -239,14 +298,13 @@ export default function StrategyWizard() {
             
             <div className="flex space-x-4">
               {currentStep === STEPS.length ? (
-                <Button className="px-8\" disabled>
+                <Button className="px-8" disabled>
                   {/* TODO: Implement PDF export */}
                   Export PDF (Coming Soon)
                 </Button>
               ) : (
                 <Button
                   onClick={goToNextStep}
-                  disabled={currentStep === 1 && !cascade.winningAspiration.trim()}
                   className="px-6"
                 >
                   Next

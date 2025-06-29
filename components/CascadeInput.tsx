@@ -13,42 +13,76 @@ import type { StrategyCascade, CoachResponse } from "@/app/app/page";
 
 interface CascadeInputProps {
   stepKey: keyof StrategyCascade;
+  label: string;
+  helperPath: string;
+  minChars: number;
   value: string;
   onChange: (value: string) => void;
   onCoachResponse: (response: CoachResponse) => void;
+  onCoachError: (error: string) => void;
   setIsLoading: (loading: boolean) => void;
   cascade: StrategyCascade;
 }
 
-// Contextual help content for Winning Aspiration
-const HELP_CONTENT = {
-  title: "Crafting Your Winning Aspiration",
-  description: "Your winning aspiration is your organization's purpose and strategic intent. It should be inspiring, specific, and actionable.",
-  guidelines: [
-    "Be specific about what success looks like in 3-5 years",
-    "Focus on outcomes that matter to customers and stakeholders", 
-    "Make it aspirational but achievable",
-    "Avoid vague language like 'be the best' or 'increase market share'",
-    "Connect to your organization's unique purpose and values"
-  ],
-  examples: [
-    "Transform how small businesses access financial services by providing instant, AI-powered lending decisions",
-    "Become the trusted partner for sustainable packaging solutions that help brands reduce environmental impact by 50%",
-    "Democratize access to quality education by making personalized learning available to 10 million students globally"
-  ]
+// Helper content mapping - TODO: Load from actual markdown files
+const HELP_CONTENT: Record<string, any> = {
+  "/content/help/winning-aspiration.md": {
+    title: "Crafting Your Winning Aspiration",
+    description: "Your winning aspiration is your organization's purpose and strategic intent. It should be inspiring, specific, and actionable.",
+    guidelines: [
+      "Be specific about what success looks like in 3-5 years",
+      "Focus on outcomes that matter to customers and stakeholders", 
+      "Make it aspirational but achievable",
+      "Avoid vague language like 'be the best' or 'increase market share'",
+      "Connect to your organization's unique purpose and values"
+    ],
+    examples: [
+      "Transform how small businesses access financial services by providing instant, AI-powered lending decisions",
+      "Become the trusted partner for sustainable packaging solutions that help brands reduce environmental impact by 50%",
+      "Democratize access to quality education by making personalized learning available to 10 million students globally"
+    ]
+  },
+  "/content/help/where-to-play.md": {
+    title: "Defining Where to Play",
+    description: "Your 'Where to Play' choices define the specific markets, customer segments, and competitive arenas where you will focus your efforts.",
+    guidelines: [
+      "Be specific about customer segments - Who exactly are you serving?",
+      "Define geographic boundaries - Which markets, regions, or locations?",
+      "Choose product/service categories - What offerings will you focus on?",
+      "Consider distribution channels - How will you reach customers?",
+      "Set competitive boundaries - Which competitors will you face directly?"
+    ],
+    examples: [
+      "Serve small business owners (1-50 employees) in the US who struggle with traditional bank lending, focusing on e-commerce businesses needing working capital under $100K",
+      "Target mid-market consumer brands ($10M-$500M revenue) in North America committed to sustainability, focusing on food & beverage packaging",
+      "Focus on enterprise software companies (500+ employees) in English-speaking markets who need AI-powered customer support automation"
+    ]
+  }
 };
 
 export function CascadeInput({ 
   stepKey, 
+  label,
+  helperPath,
+  minChars,
   value, 
   onChange, 
-  onCoachResponse, 
+  onCoachResponse,
+  onCoachError,
   setIsLoading,
   cascade 
 }: CascadeInputProps) {
   const [localValue, setLocalValue] = useState(value);
   const [errors, setErrors] = useState<string[]>([]);
   const [showHelp, setShowHelp] = useState(false);
+
+  // Get help content for current step
+  const helpContent = HELP_CONTENT[helperPath] || {
+    title: "Strategic Guidance",
+    description: "Complete this section with thoughtful detail.",
+    guidelines: [],
+    examples: []
+  };
 
   // Debounced update to parent component
   useEffect(() => {
@@ -63,26 +97,35 @@ export function CascadeInput({
   const validateInput = useCallback((input: string): string[] => {
     const errors: string[] = [];
     
-    if (input.trim().length < 50) {
-      errors.push("Your winning aspiration should be at least 50 characters to provide sufficient detail.");
+    if (input.trim().length < minChars) {
+      errors.push(`Please provide at least ${minChars} characters for sufficient detail.`);
     }
     
     if (input.trim().length > 500) {
-      errors.push("Try to keep your winning aspiration under 500 characters for clarity and focus.");
+      errors.push("Try to keep your response under 500 characters for clarity and focus.");
     }
 
-    // Check for vague language
-    const vagueTerms = ["best", "leading", "top", "great", "excellent", "good"];
-    const hasVagueTerms = vagueTerms.some(term => 
-      input.toLowerCase().includes(term)
-    );
-    
-    if (hasVagueTerms) {
-      errors.push("Avoid vague terms like 'best' or 'leading'. Be specific about what you want to achieve.");
+    // Step-specific validation
+    if (stepKey === 'winningAspiration') {
+      const vagueTerms = ["best", "leading", "top", "great", "excellent", "good"];
+      const hasVagueTerms = vagueTerms.some(term => 
+        input.toLowerCase().includes(term)
+      );
+      
+      if (hasVagueTerms) {
+        errors.push("Avoid vague terms like 'best' or 'leading'. Be specific about what you want to achieve.");
+      }
+    }
+
+    if (stepKey === 'whereToPlay') {
+      const hasBroadTerms = /everyone|all|any|general/i.test(input);
+      if (hasBroadTerms && input.length < 100) {
+        errors.push("Avoid being too broad. Be specific about your target segments and markets.");
+      }
     }
 
     return errors;
-  }, []);
+  }, [minChars, stepKey]);
 
   // Handle input change
   const handleInputChange = (newValue: string) => {
@@ -101,8 +144,21 @@ export function CascadeInput({
       onCoachResponse(response);
     } catch (error) {
       console.error("Failed to get coach feedback:", error);
+      onCoachError("Unable to get coach feedback at this time.");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Dynamic placeholder based on step
+  const getPlaceholder = () => {
+    switch (stepKey) {
+      case 'winningAspiration':
+        return "Describe your winning aspiration in detail. What does success look like for your organization? Be specific about the outcomes you want to achieve and the impact you want to make...";
+      case 'whereToPlay':
+        return "Define where you will compete. Which customer segments, markets, geographies, and product categories will you focus on? Be specific about your boundaries...";
+      default:
+        return "Provide detailed information for this strategic choice...";
     }
   };
 
@@ -125,7 +181,7 @@ export function CascadeInput({
             </Button>
           </div>
           <CardDescription>
-            {HELP_CONTENT.description}
+            {helpContent.description}
           </CardDescription>
         </CardHeader>
         
@@ -138,28 +194,32 @@ export function CascadeInput({
           >
             <CardContent className="pt-0">
               <div className="space-y-4">
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2">Key Guidelines:</h4>
-                  <ul className="space-y-1 text-sm text-gray-600">
-                    {HELP_CONTENT.guidelines.map((guideline, index) => (
-                      <li key={index} className="flex items-start">
-                        <span className="mr-2">•</span>
-                        {guideline}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2">Example Winning Aspirations:</h4>
-                  <div className="space-y-2">
-                    {HELP_CONTENT.examples.map((example, index) => (
-                      <div key={index} className="text-sm text-gray-600 italic bg-white p-3 rounded border-l-4 border-blue-300">
-                        "{example}"
-                      </div>
-                    ))}
+                {helpContent.guidelines.length > 0 && (
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-2">Key Guidelines:</h4>
+                    <ul className="space-y-1 text-sm text-gray-600">
+                      {helpContent.guidelines.map((guideline: string, index: number) => (
+                        <li key={index} className="flex items-start">
+                          <span className="mr-2">•</span>
+                          {guideline}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                </div>
+                )}
+                
+                {helpContent.examples.length > 0 && (
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-2">Examples:</h4>
+                    <div className="space-y-2">
+                      {helpContent.examples.map((example: string, index: number) => (
+                        <div key={index} className="text-sm text-gray-600 italic bg-white p-3 rounded border-l-4 border-blue-300">
+                          "{example}"
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </motion.div>
@@ -168,13 +228,13 @@ export function CascadeInput({
 
       {/* Input Section */}
       <div className="space-y-4">
-        <Label htmlFor="winning-aspiration" className="text-lg font-medium">
-          Your Winning Aspiration
+        <Label htmlFor={`input-${stepKey}`} className="text-lg font-medium">
+          {label}
         </Label>
         
         <Textarea
-          id="winning-aspiration"
-          placeholder="Describe your winning aspiration in detail. What does success look like for your organization? Be specific about the outcomes you want to achieve and the impact you want to make..."
+          id={`input-${stepKey}`}
+          placeholder={getPlaceholder()}
           value={localValue}
           onChange={(e) => handleInputChange(e.target.value)}
           className="min-h-32 text-base leading-relaxed resize-none"
