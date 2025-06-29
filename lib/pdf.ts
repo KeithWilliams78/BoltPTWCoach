@@ -1,0 +1,162 @@
+import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import type { StrategyCascade, CoachComment } from '@/types';
+
+export class PDFGenerator {
+  private doc: PDFDocument;
+  private currentPage: any;
+  private font: any;
+  private boldFont: any;
+  private currentY: number;
+  private pageWidth: number;
+  private pageHeight: number;
+  private margin: number;
+
+  constructor() {
+    this.margin = 50;
+    this.currentY = 0;
+    this.pageWidth = 0;
+    this.pageHeight = 0;
+  }
+
+  async initialize(): Promise<void> {
+    this.doc = await PDFDocument.create();
+    this.font = await this.doc.embedFont(StandardFonts.Helvetica);
+    this.boldFont = await this.doc.embedFont(StandardFonts.HelveticaBold);
+    
+    // Create first page
+    this.addNewPage();
+  }
+
+  private addNewPage(): void {
+    this.currentPage = this.doc.addPage([612, 792]); // Letter size
+    this.pageWidth = this.currentPage.getWidth();
+    this.pageHeight = this.currentPage.getHeight();
+    this.currentY = this.pageHeight - this.margin;
+  }
+
+  private checkPageSpace(requiredHeight: number): void {
+    if (this.currentY - requiredHeight < this.margin) {
+      this.addNewPage();
+    }
+  }
+
+  private drawText(text: string, fontSize: number, font: any, color = rgb(0, 0, 0)): void {
+    const lines = this.wrapText(text, fontSize, font, this.pageWidth - 2 * this.margin);
+    
+    for (const line of lines) {
+      this.checkPageSpace(fontSize + 5);
+      
+      this.currentPage.drawText(line, {
+        x: this.margin,
+        y: this.currentY,
+        size: fontSize,
+        font: font,
+        color: color,
+      });
+      
+      this.currentY -= fontSize + 5;
+    }
+  }
+
+  private wrapText(text: string, fontSize: number, font: any, maxWidth: number): string[] {
+    const words = text.split(' ');
+    const lines: string[] = [];
+    let currentLine = '';
+
+    for (const word of words) {
+      const testLine = currentLine ? `${currentLine} ${word}` : word;
+      const textWidth = font.widthOfTextAtSize(testLine, fontSize);
+      
+      if (textWidth <= maxWidth) {
+        currentLine = testLine;
+      } else {
+        if (currentLine) {
+          lines.push(currentLine);
+          currentLine = word;
+        } else {
+          // Word is too long, break it
+          lines.push(word);
+        }
+      }
+    }
+    
+    if (currentLine) {
+      lines.push(currentLine);
+    }
+    
+    return lines;
+  }
+
+  private addSpacing(pixels: number): void {
+    this.currentY -= pixels;
+  }
+
+  async generatePDF(cascade: StrategyCascade, coachComments: CoachComment[]): Promise<Uint8Array> {
+    await this.initialize();
+
+    // Title Page
+    this.drawText('Playing to Win Strategy Cascade', 24, this.boldFont, rgb(0.2, 0.4, 0.8));
+    this.addSpacing(10);
+    
+    const currentDate = new Date().toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+    this.drawText(`Generated on ${currentDate}`, 12, this.font, rgb(0.5, 0.5, 0.5));
+    this.addSpacing(30);
+
+    // Strategy Steps
+    const steps = [
+      { key: 'winningAspiration', title: 'Winning Aspiration', description: 'Your purpose and strategic intent' },
+      { key: 'whereToPlay', title: 'Where to Play', description: 'Your market focus and boundaries' },
+      { key: 'howToWin', title: 'How to Win', description: 'Your competitive advantage' },
+      { key: 'coreCapabilities', title: 'Core Capabilities', description: 'Key strengths to build and maintain' },
+      { key: 'managementSystems', title: 'Management Systems', description: 'Supporting infrastructure and processes' }
+    ];
+
+    for (const step of steps) {
+      // Step Header
+      this.checkPageSpace(80);
+      this.drawText(`${step.title}`, 18, this.boldFont, rgb(0.2, 0.4, 0.8));
+      this.drawText(step.description, 12, this.font, rgb(0.4, 0.4, 0.4));
+      this.addSpacing(10);
+
+      // Step Content
+      const content = cascade[step.key as keyof StrategyCascade];
+      if (content && content.trim()) {
+        this.drawText(content, 11, this.font);
+      } else {
+        this.drawText('This section has not been completed.', 11, this.font, rgb(0.6, 0.6, 0.6));
+      }
+      
+      this.addSpacing(15);
+
+      // Coach Comments for this step
+      const stepComments = coachComments.filter(comment => 
+        comment.step.toLowerCase().includes(step.key.toLowerCase()) ||
+        comment.step.toLowerCase().includes(step.title.toLowerCase())
+      );
+
+      if (stepComments.length > 0) {
+        this.drawText('AI Coach Feedback:', 14, this.boldFont, rgb(0.3, 0.6, 0.3));
+        this.addSpacing(5);
+
+        for (const comment of stepComments) {
+          this.drawText(`• ${comment.message}`, 10, this.font, rgb(0.2, 0.2, 0.2));
+          this.addSpacing(5);
+        }
+      }
+
+      this.addSpacing(25);
+    }
+
+    // Footer
+    this.checkPageSpace(50);
+    this.addSpacing(20);
+    this.drawText('Generated by AI Strategy Coach', 10, this.font, rgb(0.6, 0.6, 0.6));
+    this.drawText('Built with the Playing to Win framework by A.G. Lafley and Roger Martin', 10, this.font, rgb(0.6, 0.6, 0.6));
+
+    return await this.doc.save();
+  }
+}

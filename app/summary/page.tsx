@@ -1,6 +1,5 @@
 /*
 TODO: Future enhancements for summary screen:
-• Enable PDF export via Vercel serverless function
 • Implement Ask-the-Coach modal for follow-up questions
 • Add strategy sharing and collaboration features
 • Include strategy revision and versioning
@@ -17,22 +16,14 @@ import { Separator } from "@/components/ui/separator";
 import { 
   Target, 
   ArrowLeft, 
-  Download, 
   MessageCircle, 
   CheckCircle,
   Edit3
 } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-
-// Strategy Cascade structure (matches main app)
-interface StrategyCascade {
-  winningAspiration: string;
-  whereToPlay: string;
-  howToWin: string;
-  coreCapabilities: string;
-  managementSystems: string;
-}
+import { ExportButton } from "@/components/ExportButton";
+import type { StrategyCascade, CoachComment } from "@/types";
 
 const STRATEGY_STEPS = [
   {
@@ -76,7 +67,9 @@ export default function StrategySummary() {
     managementSystems: "",
   });
 
-  // TODO: Load saved cascade from Supabase
+  const [coachComments, setCoachComments] = useState<CoachComment[]>([]);
+
+  // TODO: Load saved cascade and coach comments from Supabase
   useEffect(() => {
     // Mock data for demonstration - replace with actual Supabase load
     setCascade({
@@ -86,11 +79,36 @@ export default function StrategySummary() {
       coreCapabilities: "Excel at real-time data integration, machine learning model development, risk assessment, regulatory compliance, digital UX design, and partnership development.",
       managementSystems: "Implement real-time risk monitoring dashboards, regulatory compliance tracking, customer success metrics, data governance protocols, and agile development processes.",
     });
+
+    // Mock coach comments
+    setCoachComments([
+      {
+        step: "Winning Aspiration",
+        message: "Your aspiration is specific and customer-focused. Consider adding measurable outcomes to make it even more concrete."
+      },
+      {
+        step: "Where to Play",
+        message: "Good market focus on small businesses. The geographic and size boundaries are clear and actionable."
+      },
+      {
+        step: "How to Win",
+        message: "Strong competitive advantage through speed and AI. Consider how you'll maintain this advantage as competitors catch up."
+      },
+      {
+        step: "Core Capabilities",
+        message: "These capabilities directly enable your competitive advantage. Focus on building the AI and data capabilities first."
+      },
+      {
+        step: "Management Systems",
+        message: "Your systems align well with your capabilities. Consider adding customer feedback loops to improve your AI models."
+      }
+    ]);
   }, []);
 
   // Calculate completion status
   const completedSteps = STRATEGY_STEPS.filter(step => cascade[step.key].trim().length > 0);
   const completionPercentage = Math.round((completedSteps.length / STRATEGY_STEPS.length) * 100);
+  const isComplete = completedSteps.length === STRATEGY_STEPS.length;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
@@ -141,10 +159,11 @@ export default function StrategySummary() {
           transition={{ duration: 0.5, delay: 0.1 }}
           className="flex justify-center space-x-4 mb-8"
         >
-          <Button disabled className="px-6">
-            <Download className="mr-2 h-4 w-4" />
-            Export PDF (Coming Soon)
-          </Button>
+          <ExportButton 
+            cascade={cascade}
+            coachComments={coachComments}
+            disabled={!isComplete}
+          />
           <Button variant="outline" disabled className="px-6">
             <MessageCircle className="mr-2 h-4 w-4" />
             Ask the Coach (Coming Soon)
@@ -156,6 +175,24 @@ export default function StrategySummary() {
             </Button>
           </Link>
         </motion.div>
+
+        {/* Completion Notice */}
+        {!isComplete && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="mb-8"
+          >
+            <Card className="border-amber-200 bg-amber-50">
+              <CardContent className="p-4">
+                <p className="text-amber-800 text-center">
+                  Complete all five steps to enable PDF export and full strategy analysis.
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
 
         {/* Strategy Cascade Cards */}
         <div className="space-y-6">
@@ -247,7 +284,7 @@ export default function StrategySummary() {
                 <p>
                   <strong>Completed Steps:</strong> {completedSteps.length} of {STRATEGY_STEPS.length}
                 </p>
-                {completedSteps.length === STRATEGY_STEPS.length ? (
+                {isComplete ? (
                   <p className="text-green-600 font-medium">
                     🎉 Congratulations! Your strategy cascade is complete.
                   </p>
