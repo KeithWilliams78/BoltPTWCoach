@@ -157,6 +157,35 @@ export class CoachService {
     };
   }
 
+  // Management Systems specific feedback with comprehensive five-step analysis
+  private static generateSystemsFeedback(input: string, cascade: StrategyCascade): CoachResponse {
+    const feedback = this.analyzeManagementSystems(input, cascade);
+    
+    const challengingQuestions = [
+      "Do these management systems directly enable your core capabilities, or are they just standard business processes?",
+      "How will these systems help you maintain your competitive advantage over time?",
+      "What's missing from your systems that could prevent successful strategy execution?",
+      "How will you measure whether your strategy is working and make necessary adjustments?",
+      "Are these systems aligned with your organizational culture and capabilities?"
+    ];
+
+    const suggestions = [
+      "Focus on systems that directly support your strategic choices",
+      "Include measurement and feedback mechanisms",
+      "Consider organizational design and governance needs",
+      "Plan for system integration and data flow",
+      "Think about change management and capability development"
+    ];
+
+    return {
+      stepName: "Management Systems",
+      feedback,
+      questions: this.selectRandomItems(challengingQuestions, 3),
+      suggestions: this.selectRandomItems(suggestions, 3),
+      timestamp: new Date()
+    };
+  }
+
   // Analyze winning aspiration content
   private static analyzeWinningAspiration(input: string): string {
     const length = input.length;
@@ -361,15 +390,69 @@ export class CoachService {
     return feedback;
   }
 
-  // TODO: Implement Management Systems feedback generator
-  private static generateSystemsFeedback(input: string, cascade: StrategyCascade): CoachResponse {
-    return {
-      stepName: "Management Systems",
-      feedback: "This step will design the systems and processes to support your strategy.",
-      questions: ["What systems enable success?", "How will you measure progress?"],
-      suggestions: ["Design measurement systems", "Plan organizational support"],
-      timestamp: new Date()
-    };
+  // Analyze management systems with comprehensive five-step validation
+  private static analyzeManagementSystems(input: string, cascade: StrategyCascade): string {
+    const length = input.length;
+    const hasSpecificSystems = /(dashboard|process|system|framework|governance)/i.test(input);
+    const hasGenericSystems = /(management|leadership|communication|meetings)/i.test(input);
+    const hasMeasurement = /(measure|metric|track|monitor|kpi)/i.test(input);
+    const hasAlignment = /(align|coordinate|integrate|connect)/i.test(input);
+    
+    let feedback = "I've analyzed your management systems across your entire strategy cascade";
+
+    // Comprehensive cross-step analysis
+    const allSteps = [cascade.winningAspiration, cascade.whereToPlay, cascade.howToWin, cascade.coreCapabilities];
+    const completedSteps = allSteps.filter(step => step && step.trim().length > 0);
+    
+    if (completedSteps.length >= 3) {
+      // Analyze alignment with previous steps
+      const allWords = completedSteps.join(' ').toLowerCase().split(/\s+/);
+      const inputWords = input.toLowerCase().split(/\s+/);
+      const commonWords = allWords.filter(word => 
+        inputWords.includes(word) && word.length > 3
+      );
+      
+      if (commonWords.length > 2) {
+        feedback += " and can see good alignment with your strategic choices. ";
+      } else {
+        feedback += ". Consider how these systems directly support your winning aspiration, market choices, competitive advantage, and core capabilities. ";
+      }
+    }
+
+    // Specific analysis for management systems
+    if (cascade.coreCapabilities) {
+      const capabilityWords = cascade.coreCapabilities.toLowerCase().split(/\s+/);
+      const inputWords = input.toLowerCase().split(/\s+/);
+      const commonWords = capabilityWords.filter(word => 
+        inputWords.includes(word) && word.length > 3
+      );
+      
+      if (commonWords.length > 0) {
+        feedback += "These systems appear designed to enable your core capabilities. ";
+      } else {
+        feedback += "Think about how these systems will help you build and maintain your core capabilities. ";
+      }
+    }
+
+    if (hasGenericSystems && !hasSpecificSystems) {
+      feedback += "Focus on distinctive management systems that enable your strategy, not generic business processes. ";
+    }
+
+    if (!hasMeasurement) {
+      feedback += "Consider including measurement and feedback systems to track strategic progress. ";
+    }
+
+    if (!hasAlignment && length > 100) {
+      feedback += "Think about how these systems will ensure alignment across your organization. ";
+    }
+
+    if (length < 100) {
+      feedback += "Expand on your management system requirements to provide clearer implementation guidance. ";
+    }
+
+    feedback += "Remember, effective management systems should directly enable your strategic choices and provide the infrastructure needed to execute your strategy successfully.";
+
+    return feedback;
   }
 
   // Utility function to randomly select items from an array
@@ -396,7 +479,7 @@ When implementing the real AI coach:
 2. Integrate with OpenAI, Anthropic, or similar AI service
 3. Add sophisticated prompt engineering for each strategy step
 4. Include step parameter in API calls for contextual coaching
-5. Implement comprehensive cross-step analysis (alignment across all four steps)
+5. Implement comprehensive cross-step analysis (alignment across all five steps)
 6. Add conversation history for context
 7. Store responses in Supabase for continuity
 

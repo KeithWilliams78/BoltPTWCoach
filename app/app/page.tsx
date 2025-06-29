@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, ArrowRight, Target } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { CascadeInput } from "@/components/CascadeInput";
 import { CoachSidebar } from "@/components/CoachSidebar";
 import { useToast } from "@/hooks/use-toast";
@@ -72,7 +73,7 @@ const STEPS = [
     description: "What management systems are required? Design supporting infrastructure.",
     key: "managementSystems" as keyof StrategyCascade,
     label: "Management Systems",
-    helperPath: "/content/help/management-systems.md", // TODO: Create this file
+    helperPath: "/content/help/management-systems.md",
     minChars: 40,
   },
 ];
@@ -89,6 +90,7 @@ export default function StrategyWizard() {
   const [coachResponses, setCoachResponses] = useState<CoachResponse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const router = useRouter();
 
   // Calculate progress percentage
   const progress = (currentStep / STEPS.length) * 100;
@@ -119,6 +121,9 @@ export default function StrategyWizard() {
 
     if (currentStep < STEPS.length) {
       setCurrentStep(currentStep + 1);
+    } else {
+      // Completed all steps - navigate to summary
+      router.push('/summary');
     }
   };
 
@@ -153,7 +158,7 @@ export default function StrategyWizard() {
   // Auto-save functionality (TODO: Implement with Supabase)
   useEffect(() => {
     const saveTimer = setTimeout(() => {
-      // TODO: Implement autosave to Supabase for all four populated boxes
+      // TODO: Implement autosave to Supabase for all five populated boxes
       console.log("Auto-saving cascade:", cascade);
     }, 3000);
 
@@ -241,46 +246,19 @@ export default function StrategyWizard() {
                   </p>
                 </CardHeader>
                 <CardContent className="p-8">
-                  {/* Steps 1-4 - Implemented */}
-                  {(currentStep >= 1 && currentStep <= 4) && (
-                    <CascadeInput
-                      stepKey={currentStepData.key}
-                      label={currentStepData.label}
-                      helperPath={currentStepData.helperPath}
-                      minChars={currentStepData.minChars}
-                      value={cascade[currentStepData.key]}
-                      onChange={(value) => updateCascade(currentStepData.key, value)}
-                      onCoachResponse={handleCoachResponse}
-                      onCoachError={handleCoachError}
-                      setIsLoading={setIsLoading}
-                      cascade={cascade}
-                    />
-                  )}
-                  
-                  {/* Step 5 - TODO: Implement Management Systems */}
-                  {currentStep === 5 && (
-                    <div className="text-center py-16">
-                      <h3 className="text-xl font-semibold text-gray-600 mb-4">
-                        Step 5: Management Systems
-                      </h3>
-                      <p className="text-gray-500 mb-8">
-                        This final step will be implemented in the next phase.
-                      </p>
-                      <div className="bg-gray-50 rounded-lg p-6">
-                        <p className="text-sm text-gray-600">
-                          TODO: Implement Management Systems input form with:
-                        </p>
-                        <ul className="text-sm text-gray-600 mt-2 space-y-1">
-                          <li>• Contextual help content from /content/help/management-systems.md</li>
-                          <li>• Input validation (min 40 characters)</li>
-                          <li>• AI coach integration with comprehensive 5-step analysis</li>
-                          <li>• Cross-step validation across all strategic choices</li>
-                          <li>• Final strategy coherence assessment</li>
-                          <li>• PDF export functionality</li>
-                        </ul>
-                      </div>
-                    </div>
-                  )}
+                  {/* All Steps - Now fully implemented */}
+                  <CascadeInput
+                    stepKey={currentStepData.key}
+                    label={currentStepData.label}
+                    helperPath={currentStepData.helperPath}
+                    minChars={currentStepData.minChars}
+                    value={cascade[currentStepData.key]}
+                    onChange={(value) => updateCascade(currentStepData.key, value)}
+                    onCoachResponse={handleCoachResponse}
+                    onCoachError={handleCoachError}
+                    setIsLoading={setIsLoading}
+                    cascade={cascade}
+                  />
                 </CardContent>
               </Card>
             </motion.div>
@@ -300,9 +278,12 @@ export default function StrategyWizard() {
             
             <div className="flex space-x-4">
               {currentStep === STEPS.length ? (
-                <Button className="px-8" disabled>
-                  {/* TODO: Implement PDF export */}
-                  Export PDF (Coming Soon)
+                <Button 
+                  onClick={goToNextStep}
+                  className="px-8"
+                >
+                  Complete Strategy
+                  <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               ) : (
                 <Button
