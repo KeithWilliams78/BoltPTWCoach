@@ -54,7 +54,7 @@ const STEPS = [
     description: "How will you win? Define your competitive advantage.",
     key: "howToWin" as keyof StrategyCascade,
     label: "How to Win",
-    helperPath: "/content/help/how-to-win.md", // TODO: Create this file
+    helperPath: "/content/help/how-to-win.md",
     minChars: 40,
   },
   {
@@ -241,8 +241,8 @@ export default function StrategyWizard() {
                   </p>
                 </CardHeader>
                 <CardContent className="p-8">
-                  {/* Steps 1 and 2 - Implemented */}
-                  {(currentStep === 1 || currentStep === 2) && (
+                  {/* Steps 1, 2, and 3 - Implemented */}
+                  {(currentStep >= 1 && currentStep <= 3) && (
                     <CascadeInput
                       stepKey={currentStepData.key}
                       label={currentStepData.label}
@@ -257,8 +257,8 @@ export default function StrategyWizard() {
                     />
                   )}
                   
-                  {/* Steps 3-5 - TODO: Implement */}
-                  {currentStep > 2 && (
+                  {/* Steps 4-5 - TODO: Implement */}
+                  {currentStep > 3 && (
                     <div className="text-center py-16">
                       <h3 className="text-xl font-semibold text-gray-600 mb-4">
                         Step {currentStep}: {currentStepData.title}
@@ -274,6 +274,7 @@ export default function StrategyWizard() {
                           <li>• Contextual help content from {currentStepData.helperPath}</li>
                           <li>• Input validation (min {currentStepData.minChars} characters)</li>
                           <li>• AI coach integration with step context</li>
+                          <li>• Cross-step analysis with previous choices</li>
                           <li>• Autosave functionality</li>
                         </ul>
                       </div>

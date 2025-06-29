@@ -99,6 +99,35 @@ export class CoachService {
     };
   }
 
+  // How to Win specific feedback with cross-step analysis
+  private static generateHowToWinFeedback(input: string, aspiration: string, whereToPlay: string): CoachResponse {
+    const feedback = this.analyzeHowToWin(input, aspiration, whereToPlay);
+    
+    const challengingQuestions = [
+      "Is this competitive advantage sustainable, or can competitors easily copy it?",
+      "How does this advantage directly create value for the customers you defined in 'Where to Play'?",
+      "What would make it difficult for competitors to replicate your approach?",
+      "Are you competing on cost, differentiation, or both - and is that the right choice?",
+      "How will you maintain and strengthen this advantage over time?"
+    ];
+
+    const suggestions = [
+      "Make your competitive advantage more specific and unique",
+      "Connect your advantage to customer outcomes",
+      "Consider barriers to imitation",
+      "Align with your market choices",
+      "Think about capability requirements"
+    ];
+
+    return {
+      stepName: "How to Win",
+      feedback,
+      questions: this.selectRandomItems(challengingQuestions, 3),
+      suggestions: this.selectRandomItems(suggestions, 3),
+      timestamp: new Date()
+    };
+  }
+
   // Analyze winning aspiration content
   private static analyzeWinningAspiration(input: string): string {
     const length = input.length;
@@ -181,17 +210,68 @@ export class CoachService {
     return feedback;
   }
 
-  // TODO: Implement other step feedback generators
-  private static generateHowToWinFeedback(input: string, aspiration: string, whereToPlay: string): CoachResponse {
-    return {
-      stepName: "How to Win",
-      feedback: "This step will define your competitive advantage and differentiation strategy.",
-      questions: ["What makes you different?", "Why will customers choose you?"],
-      suggestions: ["Identify unique strengths", "Consider competitive positioning"],
-      timestamp: new Date()
-    };
+  // Analyze how to win with cross-step validation
+  private static analyzeHowToWin(input: string, aspiration: string, whereToPlay: string): string {
+    const length = input.length;
+    const hasSpecificAdvantage = /(unique|proprietary|exclusive|patent|technology)/i.test(input);
+    const hasCustomerValue = /(value|benefit|outcome|result)/i.test(input);
+    const hasGenericTerms = /(better|faster|cheaper|quality|service)/i.test(input);
+    const hasSustainability = /(maintain|sustain|defend|barrier)/i.test(input);
+    
+    let feedback = "I've analyzed your competitive advantage strategy";
+
+    // Cross-step analysis with aspiration
+    if (aspiration) {
+      const aspirationWords = aspiration.toLowerCase().split(/\s+/);
+      const inputWords = input.toLowerCase().split(/\s+/);
+      const commonWords = aspirationWords.filter(word => 
+        inputWords.includes(word) && word.length > 3
+      );
+      
+      if (commonWords.length > 0) {
+        feedback += " and see good connection to your winning aspiration. ";
+      } else {
+        feedback += ". Consider how this advantage directly enables your winning aspiration. ";
+      }
+    }
+
+    // Cross-step analysis with where to play
+    if (whereToPlay) {
+      const whereWords = whereToPlay.toLowerCase().split(/\s+/);
+      const inputWords = input.toLowerCase().split(/\s+/);
+      const commonWords = whereWords.filter(word => 
+        inputWords.includes(word) && word.length > 3
+      );
+      
+      if (commonWords.length > 0) {
+        feedback += "I can see alignment with your market choices. ";
+      } else {
+        feedback += "Think about how this advantage specifically helps you win in your chosen markets. ";
+      }
+    }
+
+    if (hasGenericTerms && !hasSpecificAdvantage) {
+      feedback += "Avoid generic advantages like 'better quality' - be specific about what makes you unique. ";
+    }
+
+    if (!hasCustomerValue) {
+      feedback += "Connect your advantage to specific customer outcomes and value creation. ";
+    }
+
+    if (!hasSustainability) {
+      feedback += "Consider how you'll maintain this advantage - what prevents competitors from copying it? ";
+    }
+
+    if (length < 80) {
+      feedback += "Expand on your competitive advantage to provide clearer strategic direction. ";
+    }
+
+    feedback += "Remember, strong competitive advantages are specific, sustainable, and directly create value for your chosen customers.";
+
+    return feedback;
   }
 
+  // TODO: Implement remaining step feedback generators
   private static generateCapabilitiesFeedback(input: string, cascade: StrategyCascade): CoachResponse {
     return {
       stepName: "Core Capabilities",
@@ -236,7 +316,7 @@ When implementing the real AI coach:
 2. Integrate with OpenAI, Anthropic, or similar AI service
 3. Add sophisticated prompt engineering for each strategy step
 4. Include step parameter in API calls for contextual coaching
-5. Implement cross-step analysis (e.g., alignment between aspiration and where to play)
+5. Implement comprehensive cross-step analysis (alignment between all three steps)
 6. Add conversation history for context
 7. Store responses in Supabase for continuity
 

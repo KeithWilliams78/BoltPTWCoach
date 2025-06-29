@@ -57,6 +57,22 @@ const HELP_CONTENT: Record<string, any> = {
       "Target mid-market consumer brands ($10M-$500M revenue) in North America committed to sustainability, focusing on food & beverage packaging",
       "Focus on enterprise software companies (500+ employees) in English-speaking markets who need AI-powered customer support automation"
     ]
+  },
+  "/content/help/how-to-win.md": {
+    title: "Defining Your Competitive Advantage",
+    description: "Your 'How to Win' strategy defines the specific competitive advantage that will enable you to succeed in your chosen markets.",
+    guidelines: [
+      "Define your unique value proposition - What makes you different and better?",
+      "Identify your competitive advantages - What can you do that others cannot?",
+      "Consider cost vs. differentiation - Will you compete on price, uniqueness, or both?",
+      "Think about sustainability - How will you maintain your advantage over time?",
+      "Connect to customer needs - How does your advantage create value for customers?"
+    ],
+    examples: [
+      "Win through instant lending decisions powered by AI analysis of real-time business data, providing funding in 24 hours versus weeks for traditional lenders",
+      "Win by offering the industry's most comprehensive sustainability solution with bio-based materials, lifecycle tracking, and regulatory compliance support",
+      "Win through superior AI accuracy (95% vs. 70% industry average) with seamless integration and self-learning capabilities"
+    ]
   }
 };
 
@@ -124,6 +140,13 @@ export function CascadeInput({
       }
     }
 
+    if (stepKey === 'howToWin') {
+      const hasGenericTerms = /better|faster|cheaper|quality/i.test(input);
+      if (hasGenericTerms && input.length < 80) {
+        errors.push("Avoid generic advantages. Be specific about what makes you uniquely competitive.");
+      }
+    }
+
     return errors;
   }, [minChars, stepKey]);
 
@@ -157,6 +180,8 @@ export function CascadeInput({
         return "Describe your winning aspiration in detail. What does success look like for your organization? Be specific about the outcomes you want to achieve and the impact you want to make...";
       case 'whereToPlay':
         return "Define where you will compete. Which customer segments, markets, geographies, and product categories will you focus on? Be specific about your boundaries...";
+      case 'howToWin':
+        return "Explain how you will win in your chosen markets. What unique competitive advantages will enable you to succeed? What makes you different and better than alternatives...";
       default:
         return "Provide detailed information for this strategic choice...";
     }
