@@ -13,7 +13,7 @@ export default async function handler(
     return res.status(400).json({ success: false, error: 'Invalid cascade ID' });
   }
 
-  // Verify authentication
+  // Verify authentication using the current Clerk method
   const { userId } = getAuth(req);
   if (!userId) {
     return res.status(401).json({ success: false, error: 'Unauthorized' });
