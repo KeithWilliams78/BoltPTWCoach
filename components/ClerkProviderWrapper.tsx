@@ -15,7 +15,16 @@ function ClerkSupabaseBridge({ children }: { children: ReactNode }) {
     const setSupabaseAuth = async () => {
       if (userId) {
         try {
-          const token = await getToken({ template: 'supabase' });
+          // Try to get the supabase template token first
+          let token;
+          try {
+            token = await getToken({ template: 'supabase' });
+          } catch (templateError) {
+            // If supabase template doesn't exist, fall back to default token
+            console.warn('Supabase JWT template not found, using default token');
+            token = await getToken();
+          }
+          
           if (token) {
             await supabase.auth.setSession({
               access_token: token,
