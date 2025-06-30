@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { useUser, SignedIn, SignedOut, RedirectToSignIn } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -84,7 +84,7 @@ const STEPS = [
 ];
 
 export default function StrategyWizard() {
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const searchParams = useSearchParams();
   const router = useRouter();
   const { toast } = useToast();
@@ -102,6 +102,13 @@ export default function StrategyWizard() {
   });
   const [coachResponses, setCoachResponses] = useState<CoachResponse[]>([]);
   const [isCoachLoading, setIsCoachLoading] = useState(false);
+
+  // Redirect to sign-in if not authenticated
+  useEffect(() => {
+    if (isLoaded && !user) {
+      router.push('/sign-in');
+    }
+  }, [isLoaded, user, router]);
 
   // Load cascade data when available
   useEffect(() => {
@@ -221,6 +228,23 @@ export default function StrategyWizard() {
     return () => clearTimeout(saveTimer);
   }, [localCascade]);
 
+  // Show loading while Clerk is initializing
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading while user data is not available
+  if (!user) {
+    return null; // Will redirect to sign-in
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center">
@@ -246,146 +270,138 @@ export default function StrategyWizard() {
   }
 
   return (
-    <>
-      <SignedIn>
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
-          {/* Header */}
-          <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex justify-between items-center h-16">
-                <div className="flex items-center space-x-4">
-                  <Link href="/dashboard" className="flex items-center space-x-2">
-                    <ArrowLeft className="h-5 w-5 text-gray-600" />
-                    <Target className="h-8 w-8 text-blue-600" />
-                    <span className="text-xl font-bold text-gray-900">AI Strategy Coach</span>
-                  </Link>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <span className="text-sm text-gray-600">
-                    Step {currentStep} of {STEPS.length}
-                  </span>
-                  {/* TODO: Add user menu with Clerk */}
-                </div>
-              </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+      {/* Header */}
+      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-4">
+              <Link href="/dashboard" className="flex items-center space-x-2">
+                <ArrowLeft className="h-5 w-5 text-gray-600" />
+                <Target className="h-8 w-8 text-blue-600" />
+                <span className="text-xl font-bold text-gray-900">AI Strategy Coach</span>
+              </Link>
             </div>
-          </header>
-
-          <div className="flex">
-            {/* Main Content */}
-            <div className="flex-1 max-w-4xl mx-auto p-6">
-              {/* Progress Bar */}
-              <div className="mb-8">
-                <div className="flex justify-between items-center mb-2">
-                  <h1 className="text-2xl font-bold text-gray-900">Strategy Cascade Builder</h1>
-                  <span className="text-sm font-medium text-gray-600">{Math.round(progress)}% Complete</span>
-                </div>
-                <Progress value={progress} className="h-2" />
-              </div>
-
-              {/* Strategy Name - Only show on Step 1 */}
-              {currentStep === 1 && (
-                <div className="mb-8">
-                  <NameInput
-                    value={cascadeRecord.name}
-                    onChange={handleNameUpdate}
-                  />
-                </div>
-              )}
-
-              {/* Step Navigation */}
-              <div className="flex justify-center mb-8">
-                <div className="flex space-x-2">
-                  {STEPS.map((step) => (
-                    <button
-                      key={step.id}
-                      onClick={() => setCurrentStep(step.id)}
-                      className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-all ${
-                        currentStep === step.id
-                          ? "bg-blue-600 text-white shadow-lg"
-                          : currentStep > step.id
-                          ? "bg-green-600 text-white"
-                          : "bg-gray-200 text-gray-600 hover:bg-gray-300"
-                      }`}
-                    >
-                      {step.id}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Step Content */}
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={currentStep}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
-                    <CardHeader>
-                      <CardTitle className="text-2xl text-center text-gray-900">
-                        {currentStepData.title}
-                      </CardTitle>
-                      <p className="text-center text-gray-600 text-lg">
-                        {currentStepData.description}
-                      </p>
-                    </CardHeader>
-                    <CardContent className="p-8">
-                      <CascadeInput
-                        stepKey={currentStepData.key}
-                        label={currentStepData.label}
-                        helperPath={currentStepData.helperPath}
-                        minChars={currentStepData.minChars}
-                        value={localCascade[currentStepData.key]}
-                        onChange={(value) => updateLocalCascade(currentStepData.key, value)}
-                        onCoachResponse={handleCoachResponse}
-                        onCoachError={handleCoachError}
-                        setIsLoading={setIsCoachLoading}
-                        cascade={localCascade}
-                      />
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              </AnimatePresence>
-
-              {/* Navigation Buttons */}
-              <div className="flex justify-between mt-8">
-                <Button
-                  variant="outline"
-                  onClick={goToPreviousStep}
-                  disabled={currentStep === 1}
-                  className="px-6"
-                >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Previous
-                </Button>
-                
-                <div className="flex space-x-4">
-                  <Button
-                    onClick={goToNextStep}
-                    className="px-6"
-                  >
-                    {currentStep === STEPS.length ? 'Complete Strategy' : 'Next'}
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-gray-600">
+                Step {currentStep} of {STEPS.length}
+              </span>
+              {/* TODO: Add user menu with Clerk */}
             </div>
-
-            {/* Coach Sidebar */}
-            <CoachSidebar 
-              responses={coachResponses} 
-              isLoading={isCoachLoading}
-              currentStep={currentStepData.title}
-            />
           </div>
         </div>
-      </SignedIn>
-      
-      <SignedOut>
-        <RedirectToSignIn />
-      </SignedOut>
-    </>
+      </header>
+
+      <div className="flex">
+        {/* Main Content */}
+        <div className="flex-1 max-w-4xl mx-auto p-6">
+          {/* Progress Bar */}
+          <div className="mb-8">
+            <div className="flex justify-between items-center mb-2">
+              <h1 className="text-2xl font-bold text-gray-900">Strategy Cascade Builder</h1>
+              <span className="text-sm font-medium text-gray-600">{Math.round(progress)}% Complete</span>
+            </div>
+            <Progress value={progress} className="h-2" />
+          </div>
+
+          {/* Strategy Name - Only show on Step 1 */}
+          {currentStep === 1 && (
+            <div className="mb-8">
+              <NameInput
+                value={cascadeRecord.name}
+                onChange={handleNameUpdate}
+              />
+            </div>
+          )}
+
+          {/* Step Navigation */}
+          <div className="flex justify-center mb-8">
+            <div className="flex space-x-2">
+              {STEPS.map((step) => (
+                <button
+                  key={step.id}
+                  onClick={() => setCurrentStep(step.id)}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-all ${
+                    currentStep === step.id
+                      ? "bg-blue-600 text-white shadow-lg"
+                      : currentStep > step.id
+                      ? "bg-green-600 text-white"
+                      : "bg-gray-200 text-gray-600 hover:bg-gray-300"
+                  }`}
+                >
+                  {step.id}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Step Content */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentStep}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="text-2xl text-center text-gray-900">
+                    {currentStepData.title}
+                  </CardTitle>
+                  <p className="text-center text-gray-600 text-lg">
+                    {currentStepData.description}
+                  </p>
+                </CardHeader>
+                <CardContent className="p-8">
+                  <CascadeInput
+                    stepKey={currentStepData.key}
+                    label={currentStepData.label}
+                    helperPath={currentStepData.helperPath}
+                    minChars={currentStepData.minChars}
+                    value={localCascade[currentStepData.key]}
+                    onChange={(value) => updateLocalCascade(currentStepData.key, value)}
+                    onCoachResponse={handleCoachResponse}
+                    onCoachError={handleCoachError}
+                    setIsLoading={setIsCoachLoading}
+                    cascade={localCascade}
+                  />
+                </CardContent>
+              </Card>
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Navigation Buttons */}
+          <div className="flex justify-between mt-8">
+            <Button
+              variant="outline"
+              onClick={goToPreviousStep}
+              disabled={currentStep === 1}
+              className="px-6"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Previous
+            </Button>
+            
+            <div className="flex space-x-4">
+              <Button
+                onClick={goToNextStep}
+                className="px-6"
+              >
+                {currentStep === STEPS.length ? 'Complete Strategy' : 'Next'}
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Coach Sidebar */}
+        <CoachSidebar 
+          responses={coachResponses} 
+          isLoading={isCoachLoading}
+          currentStep={currentStepData.title}
+        />
+      </div>
+    </div>
   );
 }
