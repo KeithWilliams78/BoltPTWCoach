@@ -1,11 +1,3 @@
-/*
-TODO: Future enhancements for summary screen:
-• Implement Ask-the-Coach modal for follow-up questions
-• Add strategy sharing and collaboration features
-• Include strategy revision and versioning
-• Add implementation planning and tracking tools
-*/
-
 "use client";
 
 import { useState, useEffect } from "react";

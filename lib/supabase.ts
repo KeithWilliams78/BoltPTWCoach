@@ -34,7 +34,10 @@ export class SupabaseService {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase create error:', error);
+      throw new Error(`Failed to create cascade: ${error.message}`);
+    }
     return data;
   }
 
@@ -46,7 +49,10 @@ export class SupabaseService {
       .eq('user_id', userId)
       .order('updated_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase get cascades error:', error);
+      throw new Error(`Failed to load cascades: ${error.message}`);
+    }
     return data || [];
   }
 
@@ -59,7 +65,10 @@ export class SupabaseService {
       .eq('user_id', userId)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase get cascade error:', error);
+      throw new Error(`Failed to load cascade: ${error.message}`);
+    }
     return data;
   }
 
@@ -76,7 +85,10 @@ export class SupabaseService {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase update error:', error);
+      throw new Error(`Failed to update cascade: ${error.message}`);
+    }
     return data;
   }
 
@@ -88,12 +100,15 @@ export class SupabaseService {
       .eq('id', cascadeId)
       .eq('user_id', userId);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase delete error:', error);
+      throw new Error(`Failed to delete cascade: ${error.message}`);
+    }
   }
 }
 
 /*
-TODO: Create this table in Supabase:
+IMPORTANT: Make sure you have created this table in Supabase:
 
 -- Cascades table
 CREATE TABLE cascades (

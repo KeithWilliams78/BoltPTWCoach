@@ -43,7 +43,7 @@ export default function LandingPage() {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-            <Link href="/dashboard">
+            <Link href="/sign-in">
               <Button size="lg" className="text-lg px-8 py-3 h-auto">
                 Start Your Strategy
                 <ArrowRight className="ml-2 h-5 w-5" />
@@ -130,7 +130,7 @@ export default function LandingPage() {
                 with AI-powered coaching, you can apply these same principles to your business.
               </p>
               <div className="text-center mt-8">
-                <Link href="/dashboard">
+                <Link href="/sign-in">
                   <Button size="lg" className="text-lg px-8 py-3 h-auto">
                     Start Building Your Strategy
                     <ArrowRight className="ml-2 h-5 w-5" />
